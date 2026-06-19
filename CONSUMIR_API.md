@@ -84,10 +84,11 @@ Usá Swagger para explorar y probar cada endpoint con "Try it out" — es la for
 
 | Email | Password | Rol |
 |---|---|---|
-| `admin@techsolutions.com` | `Password123` | administrador |
-| `consultor@techsolutions.com` | `Password123` | consultor |
-| `cliente1@techsolutions.com` | `Password123` | cliente (plan Básico) |
-| `cliente2@techsolutions.com` | `Password123` | cliente (plan Premium) |
+| `admin@example.com` | `admin123` | administrador |
+| `consultor@example.com` | `consultor123` | consultor |
+| `cliente@example.com` | `cliente123` | cliente (Cliente Demo, plan Básico, 25 créditos) |
+| `franco@example.com` | `cliente123` | cliente (Franco, plan Profesional, 50 créditos) |
+| `solange@example.com` | `cliente123` | cliente (Solange, plan Premium, 100 créditos) |
 
 ---
 
@@ -141,7 +142,7 @@ Content-Type: application/json
 
 **Body:**
 ```json
-{ "email": "cliente1@techsolutions.com", "password": "Password123" }
+{ "email": "cliente@example.com", "password": "cliente123" }
 ```
 
 **Respuesta 200:**
@@ -152,7 +153,7 @@ Content-Type: application/json
   "data": {
     "access_token": "eyJhbGciOi...",
     "refresh_token": "eyJhbGciOi...",
-    "user": { "usuario_id": 3, "email": "cliente1@techsolutions.com", "rol": "cliente" }
+    "user": { "usuario_id": 3, "email": "cliente@example.com", "rol": "cliente" }
   }
 }
 ```
@@ -246,7 +247,7 @@ curl "http://localhost:5000/api/clientes?page=1&per_page=10"
       "fecha_alta": "2026-06-19",
       "creditos": 5,
       "plan_id": 1,
-      "email": "cliente1@techsolutions.com",
+      "email": "cliente@example.com",
       "estado": "activo",
       "created_at": "...",
       "updated_at": "..."
@@ -386,14 +387,14 @@ curl http://localhost:5000/api/planes
   "success": true,
   "message": "OK",
   "data": [
-    { "plan_id": 1, "nombre_plan": "Basico", "precio": "9999.00", "creditos": 10, "tiempo_respuesta": 72, "estado_plan": "activo", "created_at": "...", "updated_at": "..." },
-    { "plan_id": 2, "nombre_plan": "Profesional", "precio": "24999.00", "creditos": 30, "tiempo_respuesta": 24, "estado_plan": "activo", "created_at": "...", "updated_at": "..." },
-    { "plan_id": 3, "nombre_plan": "Premium", "precio": "49999.00", "creditos": 100, "tiempo_respuesta": 4, "estado_plan": "activo", "created_at": "...", "updated_at": "..." }
+    { "plan_id": 1, "nombre_plan": "Basico", "precio": "99.99", "creditos": 30, "tiempo_respuesta": 48, "estado_plan": "activo", "created_at": "...", "updated_at": "..." },
+    { "plan_id": 2, "nombre_plan": "Profesional", "precio": "299.99", "creditos": 100, "tiempo_respuesta": 24, "estado_plan": "activo", "created_at": "...", "updated_at": "..." },
+    { "plan_id": 3, "nombre_plan": "Premium", "precio": "499.99", "creditos": 300, "tiempo_respuesta": 4, "estado_plan": "activo", "created_at": "...", "updated_at": "..." }
   ]
 }
 ```
 
-`precio` viene como **string** (ej. `"9999.00"`), porque Postgres lo guarda como `NUMERIC` y psycopg2 lo serializa así. Si necesitás hacer cuentas, convertilo a número en tu código (`parseFloat(plan.precio)` en JS, `Decimal(plan["precio"])` en Python), no asumas que ya es number.
+`precio` viene como **string** (ej. `"99.99"`), porque Postgres lo guarda como `NUMERIC` y psycopg2 lo serializa así. Si necesitás hacer cuentas, convertilo a número en tu código (`parseFloat(plan.precio)` en JS, `Decimal(plan["precio"])` en Python), no asumas que ya es number.
 
 No hay endpoints `POST`/`PUT`/`DELETE` para planes todavía — se gestionan directo en la base.
 
@@ -419,7 +420,7 @@ curl http://localhost:5000/api/usuarios -H "Authorization: Bearer <TOKEN>"
   "success": true,
   "message": "OK",
   "data": [
-    { "usuario_id": 1, "email": "admin@techsolutions.com", "rol": "administrador", "estado": "activo", "ultimo_acceso": "...", "created_at": "..." }
+    { "usuario_id": 1, "email": "admin@example.com", "rol": "administrador", "estado": "activo", "ultimo_acceso": "...", "created_at": "..." }
   ]
 }
 ```
@@ -524,7 +525,7 @@ class API {
 
 // Uso:
 const api = new API();
-await api.login("cliente1@techsolutions.com", "Password123");
+await api.login("cliente@example.com", "cliente123");
 
 const clientes = await api.get("/api/clientes", { page: 1, per_page: 10 });
 console.log(clientes.data);
@@ -549,7 +550,7 @@ await api.post("/api/servicios", {
 # Login
 curl -X POST http://localhost:5000/api/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"email":"admin@techsolutions.com","password":"Password123"}'
+  -d '{"email":"admin@example.com","password":"admin123"}'
 
 # Guardá el access_token de la respuesta y usalo:
 TOKEN="<pegar_access_token_aca>"

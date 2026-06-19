@@ -84,7 +84,7 @@ python seed.py            # inserta datos de ejemplo, no hace nada si ya hay usu
 python seed.py --reset    # borra TODO y vuelve a sembrar (cuidado: es destructivo)
 ```
 
-Esto te deja 3 planes, 8 servicios y 4 usuarios de prueba con password `Password123` (detalle en `CONSUMIR_API.md`).
+Esto te deja 3 planes, 8 servicios oficiales del caso y 5 usuarios de prueba (admin, consultor y 3 clientes) — detalle completo de credenciales en `CONSUMIR_API.md`.
 
 ### 5. Levantá el servidor
 
