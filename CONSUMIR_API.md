@@ -612,22 +612,7 @@ curl -X POST http://localhost:5000/api/servicios \
 
 ---
 
-## 10. Mensaje para compartir con el resto del proyecto
 
-Texto listo para pegar en el chat del grupo/proyecto cuando se anuncie esta API:
 
-> 👋 Equipo 1 ya tiene lista la API de Clientes/Servicios/Planes/Usuarios (Python/Flask + Supabase, aprobado por la cátedra usar este stack).
->
-> Doc completo: `CONSUMIR_API.md` en el repo.
-> Para probar sin escribir código: `http://localhost:5000/apidocs` (Swagger, click en "Try it out").
->
-> | Equipo | ¿Necesita la API? | Qué leer |
-> |---|---|---|
-> | Equipo 2 (Solicitudes/Reportes) | Solo si necesitan datos de clientes/servicios | Secciones 2 a 5 |
-> | Equipo 3 (Panel Clientes) | Sí, totalmente | Todo el doc |
-> | Equipo 4 (Panel Admin) | Sí, totalmente | Todo, con foco en endpoints protegidos |
-> | Equipo 5 (Integraciones) | Sí | Secciones 2 a 6 |
-> | Equipo 6 (Seguridad/Deploy) | Solo configuración | Sección 1 (`.env`, `JWT_SECRET`) |
-> | Equipo 7 (Caso Azul) | No | No aplica |
->
-> Importante antes de empezar: **no hay endpoint de registro**. Para loguear un usuario tiene que existir antes en la base (lo armamos con `seed.py`, 4 usuarios de prueba documentados en el doc). Cualquier duda, las tiro acá.
+
+
