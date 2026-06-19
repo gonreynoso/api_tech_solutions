@@ -32,6 +32,58 @@ def _generate_tokens(user):
 
 @auth_bp.route("/login", methods=["POST"])
 def login():
+    """
+    Autentica un usuario y devuelve tokens JWT.
+    ---
+    tags:
+      - Auth
+    parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          type: object
+          required:
+            - email
+            - password
+          properties:
+            email:
+              type: string
+              example: usuario@email.com
+            password:
+              type: string
+              example: secreto123
+    responses:
+      200:
+        description: Login exitoso
+        schema:
+          type: object
+          properties:
+            success:
+              type: boolean
+            message:
+              type: string
+            data:
+              type: object
+              properties:
+                access_token:
+                  type: string
+                refresh_token:
+                  type: string
+                user:
+                  type: object
+                  properties:
+                    usuario_id:
+                      type: integer
+                    email:
+                      type: string
+                    rol:
+                      type: string
+      400:
+        description: Faltan campos requeridos o email inválido
+      401:
+        description: Credenciales inválidas
+    """
     data = request.get_json(silent=True) or {}
     missing = require_fields(data, ["email", "password"])
     if missing:
@@ -66,6 +118,44 @@ def login():
 
 @auth_bp.route("/refresh", methods=["POST"])
 def refresh():
+    """
+    Renueva el access token a partir de un refresh token válido.
+    ---
+    tags:
+      - Auth
+    parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          type: object
+          required:
+            - refresh_token
+          properties:
+            refresh_token:
+              type: string
+    responses:
+      200:
+        description: Tokens renovados
+        schema:
+          type: object
+          properties:
+            success:
+              type: boolean
+            data:
+              type: object
+              properties:
+                access_token:
+                  type: string
+                refresh_token:
+                  type: string
+      400:
+        description: Falta refresh_token
+      401:
+        description: Refresh token inválido, expirado o de tipo incorrecto
+      404:
+        description: Usuario no encontrado
+    """
     data = request.get_json(silent=True) or {}
     missing = require_fields(data, ["refresh_token"])
     if missing:

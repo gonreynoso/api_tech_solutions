@@ -1,3 +1,4 @@
+from flasgger import Swagger
 from flask import Flask
 
 from config import Config
@@ -5,10 +6,44 @@ from routes.auth import auth_bp
 from routes.clientes import clientes_bp
 from routes.servicios import servicios_bp
 
+SWAGGER_CONFIG = {
+    "headers": [],
+    "specs": [
+        {
+            "endpoint": "apispec",
+            "route": "/apispec.json",
+            "rule_filter": lambda rule: True,
+            "model_filter": lambda tag: True,
+        }
+    ],
+    "static_url_path": "/flasgger_static",
+    "swagger_ui": True,
+    "specs_route": "/apidocs/",
+}
+
+SWAGGER_TEMPLATE = {
+    "swagger": "2.0",
+    "info": {
+        "title": "Consultora Tech Solutions API",
+        "description": "API REST para gestión de clientes, servicios y autenticación.",
+        "version": "1.0.0",
+    },
+    "securityDefinitions": {
+        "Bearer": {
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header",
+            "description": "Token JWT con prefijo 'Bearer '. Ej: Bearer eyJhbGciOi...",
+        }
+    },
+}
+
 
 def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
+
+    Swagger(app, config=SWAGGER_CONFIG, template=SWAGGER_TEMPLATE)
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(clientes_bp)
