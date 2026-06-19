@@ -1,5 +1,8 @@
 """Seed script for Consultora Tech Solutions API.
 
+Datos oficiales según el caso de Consultora Tech Solutions (servicios, planes
+y relaciones plan_servicio documentados en el caso de la cátedra).
+
 Usage:
     python seed.py            # insert sample data (idempotent, skips if already seeded)
     python seed.py --reset    # TRUNCATE all tables first, then insert fresh data
@@ -11,110 +14,67 @@ from werkzeug.security import generate_password_hash
 
 from utils.db import query
 
-DEFAULT_PASSWORD = "Password123"
-
 PLANS = [
-    ("Basico", 9999.00, 10, 72),
-    ("Profesional", 24999.00, 30, 24),
-    ("Premium", 49999.00, 100, 4),
+    ("Basico", 99.99, 30, 48),
+    ("Profesional", 299.99, 100, 24),
+    ("Premium", 499.99, 300, 4),
 ]
 
 SERVICIOS = [
-    ("Auditoria Financiera", "Revisión integral de balances y flujos de caja.", "finanzas"),
-    ("Campaña de Marketing Digital", "Gestión de campañas en redes y SEM.", "marketing"),
-    ("Selección de Personal", "Búsqueda y selección de talento.", "recursos_humanos"),
-    ("Desarrollo de Sitio Web", "Diseño y desarrollo de sitios a medida.", "desarrollo_web"),
-    ("Optimización Logística", "Mejora de rutas y gestión de stock.", "logistica"),
-    ("Implementación de Chatbot IA", "Chatbot con IA para atención al cliente.", "inteligencia_artificial"),
-    ("Gestión de Proyectos PMO", "Acompañamiento PMO en proyectos clave.", "gestion_proyectos"),
-    ("Compliance Normativo", "Revisión de cumplimiento legal y normativo.", "cumplimiento_legal"),
+    ("Consultor en Finanzas y Contabilidad", "Asesoría en gestión financiera y tributaria", "finanzas"),
+    ("Consultor en Marketing Digital", "Estrategias de publicidad y posicionamiento en redes sociales", "marketing"),
+    ("Consultor en Recursos Humanos y Talento", "Selección y capacitación de personal", "recursos_humanos"),
+    ("Consultor en Desarrollo Web y UX/UI", "Diseño y optimización de plataformas digitales", "desarrollo_web"),
+    ("Consultor en Logística y Cadena de Suministro", "Gestión de inventario y distribución", "logistica"),
+    ("Consultor en Inteligencia Artificial y Machine Learning", "Soluciones de IA para automatizar procesos", "inteligencia_artificial"),
+    ("Consultor en Gestión de Proyectos Agile", "Capacitación y soporte en metodologías ágiles", "gestion_proyectos"),
+    ("Consultor en Cumplimiento Legal y Normativo", "Asesoría en normativas legales por sector", "cumplimiento_legal"),
 ]
 
+# Índices sobre SERVICIOS (0 = Finanzas ... 7 = Legal), según el caso oficial:
+# Básico: Finanzas, Marketing, Desarrollo Web. Profesional: todos menos Legal. Premium: todos.
+PLAN_SERVICIO_INDICES = {
+    "Basico": [0, 1, 3],
+    "Profesional": [0, 1, 2, 3, 4, 5, 6],
+    "Premium": [0, 1, 2, 3, 4, 5, 6, 7],
+}
+
+# (email, password, rol, plan_nombre o None si no es cliente)
 USUARIOS = [
-    ("admin@techsolutions.com", "administrador", None),
-    ("consultor@techsolutions.com", "consultor", None),
-    ("cliente1@techsolutions.com", "cliente", "Basico"),
-    ("cliente2@techsolutions.com", "cliente", "Premium"),
-    ("cliente3@techsolutions.com", "cliente", "Profesional"),
-    ("cliente4@techsolutions.com", "cliente", "Basico"),
-    ("cliente5@techsolutions.com", "cliente", "Premium"),
-    ("cliente6@techsolutions.com", "cliente", "Profesional"),
-    ("cliente7@techsolutions.com", "cliente", "Basico"),
-    ("cliente8@techsolutions.com", "cliente", "Premium"),
+    ("admin@example.com", "admin123", "administrador", None),
+    ("consultor@example.com", "consultor123", "consultor", None),
+    ("cliente@example.com", "cliente123", "cliente", "Basico"),
+    ("franco@example.com", "cliente123", "cliente", "Profesional"),
+    ("solange@example.com", "cliente123", "cliente", "Premium"),
 ]
 
 CLIENTES_DATA = {
-    "cliente1@techsolutions.com": {
-        "primer_nombre": "Lucia",
-        "apellido": "Fernandez",
-        "dni": "30111222",
+    "cliente@example.com": {
+        "primer_nombre": "Cliente",
+        "apellido": "Demo",
+        "dni": "30100100",
         "codigo_pais": "54",
         "codigo_area": "11",
         "numero_telefono": "41234567",
-        "creditos": 5,
-    },
-    "cliente2@techsolutions.com": {
-        "primer_nombre": "Martin",
-        "apellido": "Gomez",
-        "dni": "30333444",
-        "codigo_pais": "54",
-        "codigo_area": "11",
-        "numero_telefono": "47654321",
-        "creditos": 50,
-    },
-    "cliente3@techsolutions.com": {
-        "primer_nombre": "Carolina",
-        "apellido": "Sosa",
-        "dni": "31222111",
-        "codigo_pais": "54",
-        "codigo_area": "351",
-        "numero_telefono": "5551234",
-        "creditos": 20,
-    },
-    "cliente4@techsolutions.com": {
-        "primer_nombre": "Diego",
-        "apellido": "Acosta",
-        "dni": "32333222",
-        "codigo_pais": "54",
-        "codigo_area": "261",
-        "numero_telefono": "5552345",
-        "creditos": 8,
-    },
-    "cliente5@techsolutions.com": {
-        "primer_nombre": "Valentina",
-        "apellido": "Romero",
-        "dni": "33444333",
-        "codigo_pais": "54",
-        "codigo_area": "11",
-        "numero_telefono": "5553456",
-        "creditos": 80,
-    },
-    "cliente6@techsolutions.com": {
-        "primer_nombre": "Nicolas",
-        "apellido": "Paz",
-        "dni": "34555444",
-        "codigo_pais": "54",
-        "codigo_area": "341",
-        "numero_telefono": "5554567",
         "creditos": 25,
     },
-    "cliente7@techsolutions.com": {
-        "primer_nombre": "Florencia",
-        "apellido": "Diaz",
-        "dni": "35666555",
+    "franco@example.com": {
+        "primer_nombre": "Franco",
+        "apellido": "Asistente",
+        "dni": "30200200",
         "codigo_pais": "54",
         "codigo_area": "11",
-        "numero_telefono": "5555678",
-        "creditos": 3,
+        "numero_telefono": "42345678",
+        "creditos": 50,
     },
-    "cliente8@techsolutions.com": {
-        "primer_nombre": "Ramiro",
-        "apellido": "Suarez",
-        "dni": "36777666",
+    "solange@example.com": {
+        "primer_nombre": "Solange",
+        "apellido": "Asistente",
+        "dni": "30300300",
         "codigo_pais": "54",
-        "codigo_area": "221",
-        "numero_telefono": "5556789",
-        "creditos": 95,
+        "codigo_area": "11",
+        "numero_telefono": "43456789",
+        "creditos": 100,
     },
 }
 
@@ -161,17 +121,12 @@ def seed_servicios():
 
 
 def seed_plan_servicio(plan_ids, servicio_ids):
-    asignaciones = {
-        "Basico": servicio_ids[:2],
-        "Profesional": servicio_ids[:5],
-        "Premium": servicio_ids,
-    }
     count = 0
-    for nombre_plan, servicios in asignaciones.items():
-        for servicio_id in servicios:
+    for nombre_plan, indices in PLAN_SERVICIO_INDICES.items():
+        for i in indices:
             query(
                 "INSERT INTO plan_servicio (plan_id, servicio_id) VALUES (%s, %s)",
-                (plan_ids[nombre_plan], servicio_id),
+                (plan_ids[nombre_plan], servicio_ids[i]),
                 fetch="none",
             )
             count += 1
@@ -179,8 +134,8 @@ def seed_plan_servicio(plan_ids, servicio_ids):
 
 
 def seed_usuarios_y_clientes(plan_ids):
-    hashed = generate_password_hash(DEFAULT_PASSWORD)
-    for email, rol, plan_nombre in USUARIOS:
+    for email, password, rol, plan_nombre in USUARIOS:
+        hashed = generate_password_hash(password)
         usuario = query(
             "INSERT INTO usuario (email, contraseña, rol, estado) "
             "VALUES (%s, %s, %s, 'activo') RETURNING usuario_id",
@@ -206,8 +161,9 @@ def seed_usuarios_y_clientes(plan_ids):
                 ),
                 fetch="none",
             )
-    print(f"Usuarios creados: {[u[0] for u in USUARIOS]}")
-    print(f"Password para todos los usuarios de prueba: {DEFAULT_PASSWORD}")
+    print("Usuarios creados:")
+    for email, password, rol, _ in USUARIOS:
+        print(f"  {email} / {password} ({rol})")
 
 
 def main():
