@@ -2,6 +2,24 @@
 
 Esta guía documenta la API tal como está implementada **hoy** en el código (`app.py`, `routes/`, `models/`). Si encontrás una diferencia entre esta guía y el comportamiento real, el código manda — avisá para corregir el doc.
 
+Esta API la construyó el **Equipo 1** (Gestión de Clientes y Servicios). Es la fuente de verdad para todo lo relacionado a `cliente`, `servicio`, `plan` y `usuario`.
+
+## ¿Quién necesita leer qué?
+
+No todos los equipos consumen esta API. Si te asignaron este doc, buscá tu equipo:
+
+| Equipo | Tarea | ¿Necesita esta API? | Qué leer |
+|---|---|---|---|
+| **Equipo 1** (nosotros) | Gestión de Clientes y Servicios | Son los dueños | Todo, son quienes la mantienen |
+| **Equipo 2** | Gestión de Solicitudes y Reportes (PHP + Airtable) | Solo si necesitan datos de clientes/servicios desde su sistema | Secciones 2 a 5 (auth y endpoints), no necesitan el helper JS |
+| **Equipo 3** | Panel de Clientes (frontend) | **Sí, totalmente** | Todo el documento, sobre todo secciones 2, 3.1, 3.3 y 6 |
+| **Equipo 4** | Panel de Administrador (frontend) | **Sí, totalmente** | Todo, con foco en los endpoints protegidos (`POST`/`PUT`/`DELETE` y `/api/usuarios`) |
+| **Equipo 5** | Integración con otros sistemas (JS + PHP) | Sí, si integran clientes/servicios/planes con sistemas externos | Secciones 2 a 6 |
+| **Equipo 6** | Seguridad y Despliegue | Sí, pero no los endpoints | Sección 1 (`.env`, `JWT_SECRET`, pooler de Supabase) y sección 5 (códigos de error) |
+| **Equipo 7** | Caso Azul Farmacia | No, es un caso aparte | No aplica |
+
+Si tu equipo no aparece en "Sí" arriba y alguien te mandó este doc, probablemente sea porque van a consumir datos de clientes/servicios desde su propio sistema — confirmá con Equipo 1 antes de asumir que necesitás todo el archivo.
+
 ---
 
 ## 0. Antes de arrancar: lo que esta API NO hace
@@ -591,3 +609,25 @@ curl -X POST http://localhost:5000/api/servicios \
 - [ ] Revisaste `response.success` antes de leer `response.data`
 - [ ] Si es un POST a `/api/clientes`, confirmaste que el `usuario_id` ya existe
 - [ ] Leíste el mensaje de `errors` completo antes de asumir qué está mal
+
+---
+
+## 10. Mensaje para compartir con el resto del proyecto
+
+Texto listo para pegar en el chat del grupo/proyecto cuando se anuncie esta API:
+
+> 👋 Equipo 1 ya tiene lista la API de Clientes/Servicios/Planes/Usuarios (Python/Flask + Supabase, aprobado por la cátedra usar este stack).
+>
+> Doc completo: `CONSUMIR_API.md` en el repo.
+> Para probar sin escribir código: `http://localhost:5000/apidocs` (Swagger, click en "Try it out").
+>
+> | Equipo | ¿Necesita la API? | Qué leer |
+> |---|---|---|
+> | Equipo 2 (Solicitudes/Reportes) | Solo si necesitan datos de clientes/servicios | Secciones 2 a 5 |
+> | Equipo 3 (Panel Clientes) | Sí, totalmente | Todo el doc |
+> | Equipo 4 (Panel Admin) | Sí, totalmente | Todo, con foco en endpoints protegidos |
+> | Equipo 5 (Integraciones) | Sí | Secciones 2 a 6 |
+> | Equipo 6 (Seguridad/Deploy) | Solo configuración | Sección 1 (`.env`, `JWT_SECRET`) |
+> | Equipo 7 (Caso Azul) | No | No aplica |
+>
+> Importante antes de empezar: **no hay endpoint de registro**. Para loguear un usuario tiene que existir antes en la base (lo armamos con `seed.py`, 4 usuarios de prueba documentados en el doc). Cualquier duda, las tiro acá.
