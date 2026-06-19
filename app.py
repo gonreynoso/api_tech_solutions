@@ -5,7 +5,9 @@ from flask import Flask
 from config import Config
 from routes.auth import auth_bp
 from routes.clientes import clientes_bp
+from routes.planes import planes_bp
 from routes.servicios import servicios_bp
+from routes.usuarios import usuarios_bp
 from utils.responses import error
 
 SWAGGER_CONFIG = {
@@ -50,6 +52,8 @@ def create_app():
     app.register_blueprint(auth_bp)
     app.register_blueprint(clientes_bp)
     app.register_blueprint(servicios_bp)
+    app.register_blueprint(planes_bp)
+    app.register_blueprint(usuarios_bp)
 
     @app.errorhandler(404)
     def not_found(e):

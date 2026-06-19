@@ -20,6 +20,22 @@ class Usuario:
         )
 
     @staticmethod
+    def list_all():
+        return query(
+            "SELECT usuario_id, email, rol, estado, ultimo_acceso, created_at "
+            "FROM usuario ORDER BY usuario_id"
+        )
+
+    @staticmethod
+    def find_public_by_id(usuario_id):
+        return query(
+            "SELECT usuario_id, email, rol, estado, ultimo_acceso, created_at "
+            "FROM usuario WHERE usuario_id = %s",
+            (usuario_id,),
+            fetch="one",
+        )
+
+    @staticmethod
     def update_token(usuario_id, token_jwt):
         query(
             "UPDATE usuario SET token_jwt = %s, ultimo_acceso = CURRENT_TIMESTAMP "
