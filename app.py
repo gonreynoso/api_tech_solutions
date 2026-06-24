@@ -4,9 +4,12 @@ from flask import Flask
 
 from config import Config
 from routes.auth import auth_bp
+from routes.casos import casos_bp
 from routes.clientes import clientes_bp
+from routes.notificaciones import notificaciones_bp
 from routes.planes import planes_bp
 from routes.servicios import servicios_bp
+from routes.solicitudes import solicitudes_bp
 from routes.usuarios import usuarios_bp
 from utils.responses import error
 
@@ -54,6 +57,9 @@ def create_app():
     app.register_blueprint(servicios_bp)
     app.register_blueprint(planes_bp)
     app.register_blueprint(usuarios_bp)
+    app.register_blueprint(solicitudes_bp)
+    app.register_blueprint(casos_bp)
+    app.register_blueprint(notificaciones_bp)
 
     @app.errorhandler(404)
     def not_found(e):
