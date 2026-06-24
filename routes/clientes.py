@@ -2,6 +2,8 @@ from flask import Blueprint, request
 
 from middleware.auth import jwt_required
 from models.cliente import Cliente
+from models.integracion_externa import IntegracionExterna
+from utils import crmmax
 from utils.responses import error, success
 from utils.validators import require_fields
 
@@ -151,6 +153,22 @@ def create_cliente():
         numero_telefono=data.get("numero_telefono"),
         creditos=data.get("creditos", 0),
     )
+
+    try:
+        respuesta = crmmax.sync_cliente(cliente)
+        estado = "confirmado"
+    except Exception as exc:
+        respuesta = {"error": str(exc)}
+        estado = "error"
+    IntegracionExterna.create(
+        sistema_externo="CRMMax",
+        tipo_evento="alta_cliente",
+        registro_id=cliente["cliente_id"],
+        tabla_origen="cliente",
+        estado=estado,
+        respuesta=respuesta,
+    )
+
     return success(cliente, message="Cliente creado", status=201)
 
 

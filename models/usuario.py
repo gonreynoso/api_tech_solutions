@@ -36,6 +36,15 @@ class Usuario:
         )
 
     @staticmethod
+    def create(email, contraseña_hash, rol="cliente"):
+        return query(
+            "INSERT INTO usuario (email, contraseña, rol, estado) "
+            "VALUES (%s, %s, %s, 'activo') RETURNING *",
+            (email, contraseña_hash, rol),
+            fetch="one",
+        )
+
+    @staticmethod
     def update_token(usuario_id, token_jwt):
         query(
             "UPDATE usuario SET token_jwt = %s, ultimo_acceso = CURRENT_TIMESTAMP "
