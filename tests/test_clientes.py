@@ -157,6 +157,10 @@ def test_update_cliente_crmmax_failure_logs_error(
 # ---------- VeriCheck en update (HU5 / HU6) ----------
 
 
+@patch(
+    "routes.clientes.Plan.find_by_id",
+    return_value={"plan_id": 2, "nombre_plan": "Premium", "precio": 7900},
+)
 @patch("routes.clientes.IntegracionExterna.create", return_value={"integracion_id": 3})
 @patch("middleware.auth.jwt.decode", return_value={"user_id": 1, "email": "a@b.com"})
 @patch(
@@ -168,7 +172,7 @@ def test_update_cliente_crmmax_failure_logs_error(
     return_value={"cliente_id": 1, "dni": "12345678", "plan_id": 1},
 )
 def test_update_cliente_vericheck_on_plan_change(
-    mock_find, mock_update, mock_decode, mock_integracion, client
+    mock_find, mock_update, mock_decode, mock_integracion, mock_plan, client
 ):
     resp = client.put(
         "/api/clientes/1",
@@ -244,3 +248,201 @@ def test_update_cliente_no_vericheck_when_no_critical_change(
     )
     assert resp.status_code == 200
     mock_vc.assert_not_called()
+
+
+# ---------- PagoNet en cambio de plan (HU1 / HU2 / HU9) ----------
+
+
+@patch(
+    "routes.clientes.Plan.find_by_id",
+    return_value={"plan_id": 2, "nombre_plan": "Premium", "precio": 7900},
+)
+@patch("routes.clientes.IntegracionExterna.create", return_value={"integracion_id": 4})
+@patch("middleware.auth.jwt.decode", return_value={"user_id": 1, "email": "a@b.com"})
+@patch(
+    "routes.clientes.Cliente.update",
+    return_value={"cliente_id": 1, "primer_nombre": "Juan", "apellido": "Lopez"},
+)
+@patch(
+    "routes.clientes.Cliente.find_by_id",
+    return_value={"cliente_id": 1, "dni": "12345678", "plan_id": 1},
+)
+def test_update_cliente_factures_pagonet_on_plan_change(
+    mock_find, mock_update, mock_decode, mock_integracion, mock_plan, client
+):
+    resp = client.put(
+        "/api/clientes/1",
+        json={
+            "primer_nombre": "Juan",
+            "apellido": "Lopez",
+            "dni": "12345678",
+            "plan_id": 2,
+        },
+        headers={"Authorization": "Bearer faketoken"},
+    )
+    assert resp.status_code == 200
+    pago_calls = [
+        c
+        for c in mock_integracion.call_args_list
+        if c.kwargs["sistema_externo"] == "PagoNet"
+    ]
+    assert len(pago_calls) == 1
+    assert pago_calls[0].kwargs["tipo_evento"] == "cambio_plan_aprobado"
+    assert pago_calls[0].kwargs["estado"] == "confirmado"
+    assert pago_calls[0].kwargs["respuesta"]["intento"] == 1
+
+
+@patch(
+    "routes.clientes.pagonet.enviar_facturacion",
+    side_effect=[ConnectionError("PagoNet caído"), {"pagonet_id": "p_ok", "status": "accepted"}],
+)
+@patch(
+    "routes.clientes.Plan.find_by_id",
+    return_value={"plan_id": 2, "nombre_plan": "Premium", "precio": 7900},
+)
+@patch("routes.clientes.IntegracionExterna.create", return_value={"integracion_id": 4})
+@patch("middleware.auth.jwt.decode", return_value={"user_id": 1, "email": "a@b.com"})
+@patch(
+    "routes.clientes.Cliente.update",
+    return_value={"cliente_id": 1, "primer_nombre": "Juan", "apellido": "Lopez"},
+)
+@patch(
+    "routes.clientes.Cliente.find_by_id",
+    return_value={"cliente_id": 1, "dni": "12345678", "plan_id": 1},
+)
+def test_update_cliente_pagonet_retries_on_first_failure(
+    mock_find, mock_update, mock_decode, mock_integracion, mock_plan, mock_pagonet, client
+):
+    resp = client.put(
+        "/api/clientes/1",
+        json={
+            "primer_nombre": "Juan",
+            "apellido": "Lopez",
+            "dni": "12345678",
+            "plan_id": 2,
+        },
+        headers={"Authorization": "Bearer faketoken"},
+    )
+    assert resp.status_code == 200
+    assert mock_pagonet.call_count == 2
+    pago_calls = [
+        c
+        for c in mock_integracion.call_args_list
+        if c.kwargs["sistema_externo"] == "PagoNet"
+    ]
+    assert len(pago_calls) == 1
+    assert pago_calls[0].kwargs["estado"] == "confirmado"
+    assert pago_calls[0].kwargs["respuesta"]["intento"] == 2
+
+
+@patch(
+    "routes.clientes.pagonet.enviar_facturacion",
+    side_effect=ConnectionError("PagoNet caído"),
+)
+@patch(
+    "routes.clientes.Plan.find_by_id",
+    return_value={"plan_id": 2, "nombre_plan": "Premium", "precio": 7900},
+)
+@patch("routes.clientes.IntegracionExterna.create", return_value={"integracion_id": 4})
+@patch("middleware.auth.jwt.decode", return_value={"user_id": 1, "email": "a@b.com"})
+@patch(
+    "routes.clientes.Cliente.update",
+    return_value={"cliente_id": 1, "primer_nombre": "Juan", "apellido": "Lopez"},
+)
+@patch(
+    "routes.clientes.Cliente.find_by_id",
+    return_value={"cliente_id": 1, "dni": "12345678", "plan_id": 1},
+)
+def test_update_cliente_pagonet_all_attempts_fail(
+    mock_find, mock_update, mock_decode, mock_integracion, mock_plan, mock_pagonet, client
+):
+    resp = client.put(
+        "/api/clientes/1",
+        json={
+            "primer_nombre": "Juan",
+            "apellido": "Lopez",
+            "dni": "12345678",
+            "plan_id": 2,
+        },
+        headers={"Authorization": "Bearer faketoken"},
+    )
+    assert resp.status_code == 200
+    assert mock_pagonet.call_count == 2
+    pago_calls = [
+        c
+        for c in mock_integracion.call_args_list
+        if c.kwargs["sistema_externo"] == "PagoNet"
+    ]
+    assert len(pago_calls) == 1
+    assert pago_calls[0].kwargs["estado"] == "error"
+    assert pago_calls[0].kwargs["respuesta"]["intentos"] == 2
+
+
+@patch(
+    "routes.clientes.Plan.find_by_id",
+    return_value={"plan_id": 2, "nombre_plan": "Premium", "precio": 7900},
+)
+@patch("routes.clientes.IntegracionExterna.create", return_value={"integracion_id": 4})
+@patch("middleware.auth.jwt.decode", return_value={"user_id": 1, "email": "a@b.com"})
+@patch(
+    "routes.clientes.Cliente.update",
+    return_value={"cliente_id": 1, "primer_nombre": "Juan", "apellido": "Lopez"},
+)
+@patch(
+    "routes.clientes.Cliente.find_by_id",
+    return_value={"cliente_id": 1, "dni": "12345678", "plan_id": 1},
+)
+def test_update_cliente_notifies_notisys_on_plan_change(
+    mock_find, mock_update, mock_decode, mock_integracion, mock_plan, client
+):
+    resp = client.put(
+        "/api/clientes/1",
+        json={
+            "primer_nombre": "Juan",
+            "apellido": "Lopez",
+            "dni": "12345678",
+            "plan_id": 2,
+        },
+        headers={"Authorization": "Bearer faketoken"},
+    )
+    assert resp.status_code == 200
+    noti_calls = [
+        c
+        for c in mock_integracion.call_args_list
+        if c.kwargs["sistema_externo"] == "NotiSys"
+    ]
+    assert len(noti_calls) == 1
+    assert noti_calls[0].kwargs["tipo_evento"] == "cambio_plan_aprobado"
+    assert noti_calls[0].kwargs["estado"] == "confirmado"
+
+
+@patch("routes.clientes.IntegracionExterna.create", return_value={"integracion_id": 4})
+@patch("middleware.auth.jwt.decode", return_value={"user_id": 1, "email": "a@b.com"})
+@patch(
+    "routes.clientes.Cliente.update",
+    return_value={"cliente_id": 1, "primer_nombre": "Juan", "apellido": "Lopez"},
+)
+@patch(
+    "routes.clientes.Cliente.find_by_id",
+    return_value={"cliente_id": 1, "dni": "12345678", "plan_id": 1},
+)
+def test_update_cliente_no_pagonet_when_plan_unchanged(
+    mock_find, mock_update, mock_decode, mock_integracion, client
+):
+    resp = client.put(
+        "/api/clientes/1",
+        json={
+            "primer_nombre": "Juan",
+            "apellido": "Lopez",
+            "dni": "12345678",
+            "plan_id": 1,
+        },
+        headers={"Authorization": "Bearer faketoken"},
+    )
+    assert resp.status_code == 200
+    pago_calls = [
+        c
+        for c in mock_integracion.call_args_list
+        if c.kwargs["sistema_externo"] == "PagoNet"
+    ]
+    assert len(pago_calls) == 0
