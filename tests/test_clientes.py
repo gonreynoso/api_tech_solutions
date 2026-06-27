@@ -91,3 +91,58 @@ def test_create_cliente_crmmax_failure_logs_error(
     )
     assert resp.status_code == 201
     assert mock_integracion.call_args.kwargs["estado"] == "error"
+
+
+@patch("routes.clientes.IntegracionExterna.create", return_value={"integracion_id": 2})
+@patch("middleware.auth.jwt.decode", return_value={"user_id": 1, "email": "a@b.com"})
+@patch(
+    "routes.clientes.Cliente.update",
+    return_value={"cliente_id": 1, "primer_nombre": "Juan", "apellido": "Lopez"},
+)
+@patch("routes.clientes.Cliente.find_by_id", return_value={"cliente_id": 1})
+def test_update_cliente_syncs_with_crmmax(
+    mock_find, mock_update, mock_decode, mock_integracion, client
+):
+    resp = client.put(
+        "/api/clientes/1",
+        json={
+            "primer_nombre": "Juan",
+            "apellido": "Lopez",
+            "dni": "12345678",
+            "plan_id": 2,
+        },
+        headers={"Authorization": "Bearer faketoken"},
+    )
+    assert resp.status_code == 200
+    mock_integracion.assert_called_once()
+    assert mock_integracion.call_args.kwargs["sistema_externo"] == "CRMMax"
+    assert mock_integracion.call_args.kwargs["tipo_evento"] == "actualizacion_cliente"
+    assert mock_integracion.call_args.kwargs["estado"] == "confirmado"
+
+
+@patch(
+    "routes.clientes.crmmax.sync_cliente",
+    side_effect=ConnectionError("CRMMax no responde"),
+)
+@patch("routes.clientes.IntegracionExterna.create", return_value={"integracion_id": 2})
+@patch("middleware.auth.jwt.decode", return_value={"user_id": 1, "email": "a@b.com"})
+@patch(
+    "routes.clientes.Cliente.update",
+    return_value={"cliente_id": 1, "primer_nombre": "Juan", "apellido": "Lopez"},
+)
+@patch("routes.clientes.Cliente.find_by_id", return_value={"cliente_id": 1})
+def test_update_cliente_crmmax_failure_logs_error(
+    mock_find, mock_update, mock_decode, mock_integracion, mock_sync, client
+):
+    resp = client.put(
+        "/api/clientes/1",
+        json={
+            "primer_nombre": "Juan",
+            "apellido": "Lopez",
+            "dni": "12345678",
+            "plan_id": 2,
+        },
+        headers={"Authorization": "Bearer faketoken"},
+    )
+    assert resp.status_code == 200
+    assert mock_integracion.call_args.kwargs["estado"] == "error"

@@ -246,6 +246,22 @@ def update_cliente(cliente_id):
         codigo_area=data.get("codigo_area"),
         numero_telefono=data.get("numero_telefono"),
     )
+
+    try:
+        respuesta = crmmax.sync_cliente(cliente)
+        estado = "confirmado"
+    except Exception as exc:
+        respuesta = {"error": str(exc)}
+        estado = "error"
+    IntegracionExterna.create(
+        sistema_externo="CRMMax",
+        tipo_evento="actualizacion_cliente",
+        registro_id=cliente["cliente_id"],
+        tabla_origen="cliente",
+        estado=estado,
+        respuesta=respuesta,
+    )
+
     return success(cliente, message="Cliente actualizado")
 
 
