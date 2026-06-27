@@ -1,9 +1,32 @@
 from flask import Blueprint, request
 
 from middleware.auth import jwt_required
+from models.integracion_externa import IntegracionExterna
 from models.solicitud import Solicitud
+from utils import notisys
 from utils.responses import error, success
 from utils.validators import require_fields
+
+
+def _notificar(tipo_evento, solicitud, mensaje):
+    try:
+        respuesta = notisys.enviar_notificacion(
+            tipo=tipo_evento,
+            cliente_id=solicitud["cliente_id"],
+            mensaje=mensaje,
+        )
+        estado = "confirmado"
+    except Exception as exc:
+        respuesta = {"error": str(exc)}
+        estado = "error"
+    IntegracionExterna.create(
+        sistema_externo="NotiSys",
+        tipo_evento=tipo_evento,
+        registro_id=solicitud["solicitud_id"],
+        tabla_origen="solicitud",
+        estado=estado,
+        respuesta=respuesta,
+    )
 
 solicitudes_bp = Blueprint("solicitudes", __name__, url_prefix="/api/solicitudes")
 
@@ -129,6 +152,13 @@ def create_solicitud():
         descripcion=data["descripcion"],
         prioridad=data.get("prioridad", "media"),
     )
+
+    _notificar(
+        "solicitud_creada",
+        solicitud,
+        "Tu solicitud fue registrada y está pendiente de revisión.",
+    )
+
     return success(solicitud, message="Solicitud creada", status=201)
 
 
@@ -180,4 +210,11 @@ def update_estado_solicitud(solicitud_id):
         return error("Estado no válido", 400, {"valid_states": sorted(ESTADOS_VALIDOS)})
 
     solicitud = Solicitud.update_estado(solicitud_id, data["estado_solicitud"])
+
+    _notificar(
+        "cambio_estado_solicitud",
+        solicitud,
+        f"Tu solicitud cambió de estado a '{data['estado_solicitud']}'.",
+    )
+
     return success(solicitud, message="Solicitud actualizada")
