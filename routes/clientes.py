@@ -3,7 +3,7 @@ from flask import Blueprint, request
 from middleware.auth import jwt_required
 from models.cliente import Cliente
 from models.integracion_externa import IntegracionExterna
-from utils import crmmax
+from utils import crmmax, vericheck
 from utils.responses import error, success
 from utils.validators import require_fields
 
@@ -226,13 +226,37 @@ def update_cliente(cliente_id):
       404:
         description: Cliente no encontrado
     """
-    if not Cliente.find_by_id(cliente_id):
+    existing = Cliente.find_by_id(cliente_id)
+    if not existing:
         return error("Cliente no encontrado", 404)
 
     data = request.get_json(silent=True) or {}
     missing = require_fields(data, ["primer_nombre", "apellido", "dni", "plan_id"])
     if missing:
         return error("Faltan campos requeridos", 400, {"missing": missing})
+
+    cambio_critico = (
+        str(data["dni"]) != str(existing["dni"])
+        or int(data["plan_id"]) != int(existing["plan_id"])
+    )
+    if cambio_critico:
+        nombre_completo = f"{data['primer_nombre']} {data['apellido']}"
+        resultado_vc = vericheck.validate_identity(data["dni"], nombre_completo)
+        estado_vc = "confirmado" if resultado_vc["resultado"] == "aprobada" else "error"
+        IntegracionExterna.create(
+            sistema_externo="VeriCheck",
+            tipo_evento="validacion_cambio_critico",
+            registro_id=cliente_id,
+            tabla_origen="cliente",
+            estado=estado_vc,
+            respuesta=resultado_vc,
+        )
+        if resultado_vc["resultado"] != "aprobada":
+            return error(
+                "Cambio bloqueado: identidad no validada por VeriCheck",
+                403,
+                {"motivo": resultado_vc.get("motivo")},
+            )
 
     cliente = Cliente.update(
         cliente_id,
