@@ -5,6 +5,8 @@ API REST de **Gestión de Clientes y Servicios** para el proyecto de Consultora 
 Stack: **Python + Flask + PostgreSQL (Supabase)**. JWT para autenticación, Flasgger para documentación interactiva (Swagger).
 
 > 📖 Si vas a **consumir** esta API desde otro equipo/proyecto (frontend, otro backend, integraciones), la referencia completa de endpoints, formatos de respuesta y ejemplos está en **[`CONSUMIR_API.md`](./CONSUMIR_API.md)**. Este README es sobre cómo levantar el proyecto, no sobre cómo usar cada endpoint.
+>
+> 🔌 Si tu equipo consume `PUT /api/clientes/<id>`, `POST /api/solicitudes` o `PUT /api/solicitudes/<id>/estado`, leé también **[`INTEGRACIONES.md`](./INTEGRACIONES.md)** — Equipo 5 sumó side effects automáticos (sincronización con CRMMax, validación VeriCheck, facturación PagoNet, notificaciones NotiSys) que cambian el comportamiento de esos endpoints.
 
 ---
 
@@ -33,6 +35,7 @@ middleware/auth.py  # Decorador @jwt_required
 utils/              # Conexión a DB, respuestas estándar, validaciones
 tests/               # Suite de pytest (mockea la DB, no requiere conexión real)
 CONSUMIR_API.md     # Referencia completa de endpoints para quien consume la API
+INTEGRACIONES.md    # Módulo de integraciones externas (Equipo 5): triggers, mocks, auditoría
 ```
 
 ---
