@@ -91,3 +91,85 @@ def test_get_integracion_not_found(mock_find, mock_decode, client):
         headers={"Authorization": "Bearer faketoken"},
     )
     assert resp.status_code == 404
+
+
+# ---------- POST /simular (página demo Equipo 5) ----------
+
+
+def test_simular_requires_token(client):
+    resp = client.post(
+        "/api/integraciones/simular",
+        json={"sistema_externo": "CRMMax", "tipo_evento": "sincronizacion_cliente"},
+    )
+    assert resp.status_code == 401
+
+
+@patch("middleware.auth.jwt.decode", return_value={"user_id": 1, "email": "a@b.com"})
+@patch(
+    "routes.integraciones.IntegracionExterna.create",
+    return_value={"integracion_id": 10, "estado": "confirmado"},
+)
+def test_simular_success(mock_create, mock_decode, client):
+    resp = client.post(
+        "/api/integraciones/simular",
+        json={
+            "sistema_externo": "CRMMax",
+            "tipo_evento": "sincronizacion_cliente",
+            "cliente_id": 7,
+        },
+        headers={"Authorization": "Bearer faketoken"},
+    )
+    assert resp.status_code == 201
+    assert mock_create.call_args.kwargs["sistema_externo"] == "CRMMax"
+    assert mock_create.call_args.kwargs["tipo_evento"] == "sincronizacion_cliente"
+    assert mock_create.call_args.kwargs["estado"] == "confirmado"
+    assert mock_create.call_args.kwargs["registro_id"] == 7
+    assert mock_create.call_args.kwargs["respuesta"]["simulacion"] is True
+
+
+@patch("middleware.auth.jwt.decode", return_value={"user_id": 1, "email": "a@b.com"})
+@patch(
+    "routes.integraciones.IntegracionExterna.create",
+    return_value={"integracion_id": 11, "estado": "error"},
+)
+def test_simular_forzar_error(mock_create, mock_decode, client):
+    resp = client.post(
+        "/api/integraciones/simular",
+        json={
+            "sistema_externo": "PagoNet",
+            "tipo_evento": "envio_facturacion",
+            "forzar_error": True,
+        },
+        headers={"Authorization": "Bearer faketoken"},
+    )
+    assert resp.status_code == 201
+    assert mock_create.call_args.kwargs["estado"] == "error"
+
+
+@patch("middleware.auth.jwt.decode", return_value={"user_id": 1, "email": "a@b.com"})
+def test_simular_invalid_sistema(mock_decode, client):
+    resp = client.post(
+        "/api/integraciones/simular",
+        json={"sistema_externo": "Inexistente", "tipo_evento": "x"},
+        headers={"Authorization": "Bearer faketoken"},
+    )
+    assert resp.status_code == 400
+
+
+@patch("middleware.auth.jwt.decode", return_value={"user_id": 1, "email": "a@b.com"})
+def test_simular_missing_fields(mock_decode, client):
+    resp = client.post(
+        "/api/integraciones/simular",
+        json={"sistema_externo": "CRMMax"},
+        headers={"Authorization": "Bearer faketoken"},
+    )
+    assert resp.status_code == 400
+
+
+# ---------- Página demo ----------
+
+
+def test_demo_index_html(client):
+    resp = client.get("/eq5-demo")
+    assert resp.status_code == 200
+    assert b"Equipo 5" in resp.data

@@ -6,6 +6,7 @@ from config import Config
 from routes.auth import auth_bp
 from routes.casos import casos_bp
 from routes.clientes import clientes_bp
+from routes.demo import demo_bp
 from routes.integraciones import integraciones_bp
 from routes.notificaciones import notificaciones_bp
 from routes.planes import planes_bp
@@ -62,6 +63,7 @@ def create_app():
     app.register_blueprint(casos_bp)
     app.register_blueprint(notificaciones_bp)
     app.register_blueprint(integraciones_bp)
+    app.register_blueprint(demo_bp)
 
     @app.errorhandler(404)
     def not_found(e):
