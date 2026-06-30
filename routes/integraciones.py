@@ -48,8 +48,8 @@ def list_integraciones():
       401:
         description: Token no provisto, inválido o expirado
     """
-    page = request.args.get("page", default=1, type=int)
-    per_page = request.args.get("per_page", default=20, type=int)
+    page = max(request.args.get("page", default=1, type=int), 1)
+    per_page = min(max(request.args.get("per_page", default=20, type=int), 1), 100)
     sistema_externo = request.args.get("sistema_externo")
     estado = request.args.get("estado")
 
@@ -98,8 +98,8 @@ def list_integraciones_errores():
       401:
         description: Token no provisto, inválido o expirado
     """
-    page = request.args.get("page", default=1, type=int)
-    per_page = request.args.get("per_page", default=20, type=int)
+    page = max(request.args.get("page", default=1, type=int), 1)
+    per_page = min(max(request.args.get("per_page", default=20, type=int), 1), 100)
     sistema_externo = request.args.get("sistema_externo")
 
     if sistema_externo and sistema_externo not in SISTEMAS_VALIDOS:

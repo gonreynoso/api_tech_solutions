@@ -10,6 +10,10 @@ Este documento describe lo que el **Equipo 5** agregó al repo: integraciones co
 
 Equipo 5 **no rompió** ningún endpoint, pero sí agregó comportamiento automático en algunos. Si tu equipo consume estos endpoints, leé esto:
 
+### `POST /api/clientes` — crear cliente
+
+Tras crear el cliente, dispara **CRMMax** con `tipo_evento="alta_cliente"` para sincronizar el perfil nuevo (HU3). Si CRMMax falla, el alta **no se bloquea** — el error queda registrado en `integracion_externa`.
+
 ### `PUT /api/clientes/<id>` — actualizar cliente
 
 Ahora, además del update, dispara automáticamente:
@@ -58,7 +62,7 @@ Filtro inválido → `400`.
 
 ## 3. Sistemas externos (mocks)
 
-Las integraciones reales no existen en el TP. Cada sistema tiene un **mock** en `utils/` que devuelve una respuesta con la misma forma que tendría la API real. Para producción, reemplazar el mock por un cliente HTTP real:
+Las integraciones reales no existen en el TP. Hoy hay **mocks** en `utils/` para CRMMax, VeriCheck, NotiSys y PagoNet, con respuestas de la misma forma que tendría la API real. AnalytixPro y WhatsApp siguen pendientes. Para producción, reemplazar cada mock por un cliente HTTP real:
 
 | Sistema | Archivo | Función principal |
 |---|---|---|

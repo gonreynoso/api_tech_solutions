@@ -147,9 +147,10 @@ async function cargarClientes() {
       estadoApi.textContent = data.message || "No se pudo consultar la API.";
       return;
     }
-    mostrarClientes(data.data || []);
+    const clientes = data.data || [];
+    mostrarClientes(clientes);
     estadoApi.className = "status success";
-    estadoApi.textContent = `${data.data.length} clientes (total: ${data.meta.total}).`;
+    estadoApi.textContent = `${clientes.length} clientes (total: ${data.meta?.total ?? clientes.length}).`;
   } catch (err) {
     estadoApi.className = "status error";
     estadoApi.textContent = "Error de red al consultar la API.";
@@ -229,7 +230,7 @@ async function cargarLogs() {
     tablaLogs.innerHTML = "";
 
     if (!resp.ok) {
-      tablaLogs.innerHTML = `<tr><td colspan="6">${escape(data.message) || "Error al cargar el historial."}</td></tr>`;
+      tablaLogs.innerHTML = `<tr><td colspan="6">${escape(data.message || "Error al cargar el historial.")}</td></tr>`;
       return;
     }
     if (!data.data || data.data.length === 0) {

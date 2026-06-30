@@ -25,6 +25,8 @@ class IntegracionExterna:
 
     @staticmethod
     def list_paginated(page=1, per_page=20, sistema_externo=None, estado=None):
+        page = max(int(page), 1)
+        per_page = min(max(int(per_page), 1), 100)
         offset = (page - 1) * per_page
         filters = []
         params = []
