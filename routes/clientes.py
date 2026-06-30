@@ -3,11 +3,68 @@ from flask import Blueprint, request
 from middleware.auth import jwt_required
 from models.cliente import Cliente
 from models.integracion_externa import IntegracionExterna
-from utils import crmmax
+from models.plan import Plan
+from utils import crmmax, notisys, pagonet, vericheck
 from utils.responses import error, success
 from utils.validators import require_fields
 
 clientes_bp = Blueprint("clientes", __name__, url_prefix="/api/clientes")
+
+PAGONET_MAX_INTENTOS = 2
+
+
+def _facturar_cambio_plan(cliente, plan):
+    nombre = f"{cliente['primer_nombre']} {cliente['apellido']}"
+    ultimo_error = None
+    for intento in range(1, PAGONET_MAX_INTENTOS + 1):
+        try:
+            respuesta = pagonet.enviar_facturacion(
+                cliente_id=cliente["cliente_id"],
+                nombre_cliente=nombre,
+                plan_nuevo=plan["nombre_plan"],
+                monto=float(plan["precio"]),
+            )
+            IntegracionExterna.create(
+                sistema_externo="PagoNet",
+                tipo_evento="cambio_plan_aprobado",
+                registro_id=cliente["cliente_id"],
+                tabla_origen="cliente",
+                estado="confirmado",
+                respuesta={**respuesta, "intento": intento},
+            )
+            return True
+        except Exception as exc:
+            ultimo_error = str(exc)
+    IntegracionExterna.create(
+        sistema_externo="PagoNet",
+        tipo_evento="cambio_plan_aprobado",
+        registro_id=cliente["cliente_id"],
+        tabla_origen="cliente",
+        estado="error",
+        respuesta={"error": ultimo_error, "intentos": PAGONET_MAX_INTENTOS},
+    )
+    return False
+
+
+def _notificar_cambio_plan(cliente, plan):
+    try:
+        respuesta = notisys.enviar_notificacion(
+            tipo="cambio_plan_aprobado",
+            cliente_id=cliente["cliente_id"],
+            mensaje=f"Tu cambio al plan {plan['nombre_plan']} fue aprobado.",
+        )
+        estado = "confirmado"
+    except Exception as exc:
+        respuesta = {"error": str(exc)}
+        estado = "error"
+    IntegracionExterna.create(
+        sistema_externo="NotiSys",
+        tipo_evento="cambio_plan_aprobado",
+        registro_id=cliente["cliente_id"],
+        tabla_origen="cliente",
+        estado=estado,
+        respuesta=respuesta,
+    )
 
 
 @clientes_bp.route("", methods=["GET"])
@@ -226,13 +283,37 @@ def update_cliente(cliente_id):
       404:
         description: Cliente no encontrado
     """
-    if not Cliente.find_by_id(cliente_id):
+    existing = Cliente.find_by_id(cliente_id)
+    if not existing:
         return error("Cliente no encontrado", 404)
 
     data = request.get_json(silent=True) or {}
     missing = require_fields(data, ["primer_nombre", "apellido", "dni", "plan_id"])
     if missing:
         return error("Faltan campos requeridos", 400, {"missing": missing})
+
+    cambio_critico = (
+        str(data["dni"]) != str(existing["dni"])
+        or int(data["plan_id"]) != int(existing["plan_id"])
+    )
+    if cambio_critico:
+        nombre_completo = f"{data['primer_nombre']} {data['apellido']}"
+        resultado_vc = vericheck.validate_identity(data["dni"], nombre_completo)
+        estado_vc = "confirmado" if resultado_vc["resultado"] == "aprobada" else "error"
+        IntegracionExterna.create(
+            sistema_externo="VeriCheck",
+            tipo_evento="validacion_cambio_critico",
+            registro_id=cliente_id,
+            tabla_origen="cliente",
+            estado=estado_vc,
+            respuesta=resultado_vc,
+        )
+        if resultado_vc["resultado"] != "aprobada":
+            return error(
+                "Cambio bloqueado: identidad no validada por VeriCheck",
+                403,
+                {"motivo": resultado_vc.get("motivo")},
+            )
 
     cliente = Cliente.update(
         cliente_id,
@@ -246,6 +327,28 @@ def update_cliente(cliente_id):
         codigo_area=data.get("codigo_area"),
         numero_telefono=data.get("numero_telefono"),
     )
+
+    if int(data["plan_id"]) != int(existing["plan_id"]):
+        plan_nuevo = Plan.find_by_id(data["plan_id"])
+        if plan_nuevo:
+            _facturar_cambio_plan(cliente, plan_nuevo)
+            _notificar_cambio_plan(cliente, plan_nuevo)
+
+    try:
+        respuesta = crmmax.sync_cliente(cliente)
+        estado = "confirmado"
+    except Exception as exc:
+        respuesta = {"error": str(exc)}
+        estado = "error"
+    IntegracionExterna.create(
+        sistema_externo="CRMMax",
+        tipo_evento="actualizacion_cliente",
+        registro_id=cliente["cliente_id"],
+        tabla_origen="cliente",
+        estado=estado,
+        respuesta=respuesta,
+    )
+
     return success(cliente, message="Cliente actualizado")
 
 

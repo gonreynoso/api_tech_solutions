@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Equipo 5 — Integraciones</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <main class="container">
+    <header class="header">
+      <p class="eyebrow">Consultora Tech Solutions · Equipo 5</p>
+      <h1>Módulo de Integraciones Externas</h1>
+    </header>
+
+    <section class="card">
+      <div class="card-head">
+        <h2>Acceso</h2>
+        <span id="userBadge" class="user-badge hidden"></span>
+      </div>
+      <div class="form-grid form-grid-3">
+        <label>
+          Email
+          <input type="email" id="email" placeholder="usuario@correo.com">
+        </label>
+        <label>
+          Contraseña
+          <input type="password" id="password">
+        </label>
+        <div class="form-actions">
+          <button id="btnLogin">Iniciar sesión</button>
+          <button id="btnLogout" class="secondary">Cerrar</button>
+        </div>
+      </div>
+      <p class="hint">
+        Cuentas de prueba (seed):
+        <a href="#" class="cred" data-email="admin@example.com" data-password="admin123">admin@example.com / admin123</a> ·
+        <a href="#" class="cred" data-email="cliente@example.com" data-password="cliente123">cliente@example.com / cliente123</a>
+      </p>
+      <p id="estadoSesion" class="status">Sin sesión activa.</p>
+    </section>
+
+    <section class="card">
+      <div class="card-head">
+        <h2>Clientes (HU12)</h2>
+        <button id="btnCargarClientes" class="secondary">Refrescar</button>
+      </div>
+      <p id="estadoApi" class="status">Sin datos cargados.</p>
+
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Cliente</th>
+              <th>DNI</th>
+              <th>Plan</th>
+            </tr>
+          </thead>
+          <tbody id="tablaClientes"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-head">
+        <h2>Simular integración (HU14)</h2>
+      </div>
+
+      <div class="form-grid">
+        <label>
+          Sistema externo
+          <select id="sistema">
+            <option value="CRMMax">CRMMax</option>
+            <option value="PagoNet">PagoNet</option>
+            <option value="VeriCheck">VeriCheck</option>
+            <option value="AnalytixPro">AnalytixPro</option>
+            <option value="NotiSys">NotiSys</option>
+            <option value="WhatsApp">WhatsApp</option>
+          </select>
+        </label>
+
+        <label>
+          Tipo de evento
+          <select id="tipoEvento">
+            <option value="sincronizacion_cliente">sincronizacion_cliente</option>
+            <option value="envio_facturacion">envio_facturacion</option>
+            <option value="validacion_identidad">validacion_identidad</option>
+            <option value="envio_metricas">envio_metricas</option>
+            <option value="notificacion_cliente">notificacion_cliente</option>
+          </select>
+        </label>
+
+        <label>
+          Cliente
+          <select id="cliente">
+            <option value="">Sin cliente</option>
+          </select>
+        </label>
+
+        <label class="checkbox">
+          <input type="checkbox" id="forzarError">
+          Forzar error
+        </label>
+      </div>
+
+      <button id="btnSimular">Simular</button>
+      <p id="estadoSimulacion" class="status">Sin ejecuciones aún.</p>
+    </section>
+
+    <section class="card">
+      <div class="card-head">
+        <h2>Historial (HU15, HU22)</h2>
+        <button id="btnRecargar" class="secondary">Refrescar</button>
+      </div>
+
+      <div class="form-grid">
+        <label>
+          Sistema externo
+          <select id="filtroSistema">
+            <option value="">Todos</option>
+            <option value="CRMMax">CRMMax</option>
+            <option value="PagoNet">PagoNet</option>
+            <option value="VeriCheck">VeriCheck</option>
+            <option value="AnalytixPro">AnalytixPro</option>
+            <option value="NotiSys">NotiSys</option>
+            <option value="WhatsApp">WhatsApp</option>
+          </select>
+        </label>
+        <label>
+          Estado
+          <select id="filtroEstado">
+            <option value="">Todos</option>
+            <option value="confirmado">confirmado</option>
+            <option value="error">error</option>
+            <option value="pendiente">pendiente</option>
+            <option value="enviado">enviado</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Sistema</th>
+              <th>Evento</th>
+              <th>Tabla</th>
+              <th>Registro</th>
+              <th>Estado</th>
+            </tr>
+          </thead>
+          <tbody id="tablaLogs"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
